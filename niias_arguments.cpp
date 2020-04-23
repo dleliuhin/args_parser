@@ -2,17 +2,21 @@
 
 #include <iostream>
 #include <cassert>
-#include <sys/types.h>
-#include <sys/stat.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
 #include <fcntl.h>
 
 #include "vlog.h"
 #include "vapplication.h"
+#include "vbyte_buffer.h"
+#include "vgit.h"
 #include "impl_vposix/wrap_fcntl.h"
 #include "impl_vposix/wrap_unistd.h"
 #include "impl_vposix/wrap_errno.h"
 #include "impl_vposix/wrap_signal.h"
 #include "impl_vposix/safe_fd.h"
+#include "impl_vposix/wrap_sys_file.h"
+
 
 using namespace niias;
 using namespace impl_vposix;
@@ -34,10 +38,12 @@ public:
                   << std::endl;
     }
     //-----------------------------------------------------------------------------------
-    void print_help_and_exit( int retcode )
+    void print_help()
     {
-        help();
-        exit( retcode );
+        if ( help.empty() )
+            print_phony_help();
+        else
+            std::cout << help;
     }
     //-----------------------------------------------------------------------------------
     _pimpl( int argc, const char * const * const argv )
@@ -46,7 +52,8 @@ public:
     //-----------------------------------------------------------------------------------
     ~_pimpl()
     {
-        unlock_pid();
+        if ( !pid_fname.empty() )
+            wrap_unistd::unlink_no_err( pid_fname );
     }
     //-----------------------------------------------------------------------------------
     bool find_help()
@@ -59,14 +66,14 @@ public:
     //-----------------------------------------------------------------------------------
     bool find_config()
     {
-        conf_name = find_smth( "-c", "-c", "config=", "--config=" );
-        return !conf_name.empty();
+        conf_fname = find_smth( "-c", "-c", "config=", "--config=" );
+        return !conf_fname.empty();
     }
     //-----------------------------------------------------------------------------------
     bool find_pid()
     {
-        pid_name = find_smth( "-p", "-p", "pid=", "--pid=" );
-        return !pid_name.empty();
+        pid_fname = find_smth( "-p", "-p", "pid=", "--pid=" );
+        return !pid_fname.empty();
     }
     //-----------------------------------------------------------------------------------
     str find_smth( str next1, str start1, str start2, str start3 )
@@ -89,76 +96,56 @@ public:
         auto unused = args.unused();
         if ( unused.empty() ) return;
 
+        print_help();
+        vwarning << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
         vwarning << "Found unused arguments:" << unused;
-        print_help_and_exit(1);
+        vwarning << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+        exit(EXIT_FAILURE);
     }
     //-----------------------------------------------------------------------------------
-    bool lock_pid()
+    void lock_pid()
     {
-        assert( !pid_name.empty() );
-        pid_fd = wrap_fcntl::open( pid_name.c_str(), O_CREAT|O_RDWR|O_LARGEFILE, 0644 );
+        assert( !pid_fname.empty() );
+        pid_fd = wrap_fcntl::open( pid_fname.c_str(), O_CREAT|O_RDWR|O_LARGEFILE, 0644 );
 
-        auto blocked = wrap_unistd::lockf_test_lock_no_err( pid_fd );
-        if (blocked == 0)
+        auto locked = wrap_sys_file::try_lock_exclusive( pid_fd );
+        if ( !locked )
         {
-            wrap_unistd::write(pid_fd, vcat().aligned(vapplication::pid(),10,' ')('\n'));
-            return true;
-        }
-        ErrNo err;
-        if ( !err.resource_unavailable_try_again() )
-            err.do_throw( vcat("Unexpected error during locking PID file '",
-                               pid_name,"'") );
-        //-------------------------------------------------------------------------------
-        // Need to search process with pid in file.
-        // 1. read the pid:
-        auto str_pid = wrap_unistd::read( pid_fd );
-        pid_t other_pid = -1;
-        try
-        {
-            other_pid = vcat::from_text<pid_t>( str_pid );
-        }
-        catch ( const std::exception& e )
-        {
-            throw verror << "Cannot lock and check PID lockfile '" << pid_name
-                         << "', err: " << e.what();
+            vbyte_buffer text = wrap_unistd::read( pid_fd );
+            throw verror << "Cannot lock PID file '" << pid_fname << "', possible PID "
+                         << "of locked process: '" << text.trim_spaces() << "'";
         }
 
-        if ( wrap_signal::has_process(other_pid) )
-        {
-            throw verror( "Process, locked file '",pid_name,"' with PID ", other_pid,
-                          " is active, cannot lock.");
-        }
-
-        wrap_unistd::lockf_unlock_no_err( pid_fd );
-        return false;
-    }
-    //-----------------------------------------------------------------------------------
-    void unlock_pid()
-    {
-        //wrap_unistd::lockf_unlock_no_err( pid_fd );
+        wrap_unistd::write(pid_fd, vcat().aligned(vapplication::pid(),10,' ')('\n'));
     }
     //-----------------------------------------------------------------------------------
     vapplication::args_parser args;
 
-    std::string conf_name;
+    std::string conf_fname;
 
-    std::string pid_name;
+    std::string pid_fname;
     safe_fd pid_fd;
-    help_call help;
+    std::string help;
     //-----------------------------------------------------------------------------------
 };
 //=======================================================================================
-arguments::arguments( int argc, const char * const * const argv, help_call help )
+arguments::arguments( int argc, const char * const * const argv, std::string help )
     : _p( new _pimpl(argc,argv) )
 {
-    _p->help = help ? help : &_pimpl::print_phony_help;
+    vgit::print_and_exit_if_need( argc, argv );
+
+    _p->help = help;
 
     if ( _p->find_help() )
-        _p->print_help_and_exit(0);
+    {
+        _p->print_help();
+        exit(EXIT_SUCCESS);
+    }
+
+    if ( _p->find_pid() )
+        _p->lock_pid();
 
     _p->find_config();
-    _p->find_pid();
-    //_p->lock_pid();
 
     _p->check_remained_args();
 }
@@ -168,13 +155,13 @@ niias::arguments::~arguments()
 //=======================================================================================
 std::string niias::arguments::config_name() const
 {
-    return _p->conf_name;
+    return _p->conf_fname;
 }
 //=======================================================================================
 vsettings niias::arguments::settings() const
 {
     vsettings res;
-    res.from_ini_file( _p->conf_name );
+    res.from_ini_file( _p->conf_fname );
     return res;
 }
 //=======================================================================================

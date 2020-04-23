@@ -47,13 +47,17 @@ TEST_F( niias_srv_supply, _test_name )
 //=======================================================================================
 int main(int argc, char *argv[])
 {
+//    "app -p lock -plock2";
     std::vector<const char*> vargs;
     vargs.push_back("/my/app/name");
-    vargs.push_back("-plock.test");
+    //vargs.push_back("-plock.test");
+    vargs.push_back("-p");
+    vargs.push_back("z_lock.pid");
     //vargs.push_back("-h");
-    vargs.push_back("ololo");
+    //vargs.push_back("ololo");
 
     niias::arguments args( vargs.size(), vargs.data() );
+    usleep(5e6);
     return 0;
 
     ::testing::InitGoogleTest(&argc, argv);

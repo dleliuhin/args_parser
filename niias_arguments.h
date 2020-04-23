@@ -9,13 +9,11 @@
 namespace niias
 {
     //===================================================================================
-    using help_call = std::function<void()>;
-
     class arguments final
     {
     public:
 
-        arguments( int argc, char const * const * const argv, help_call help = {} );
+        arguments( int argc, char const * const * const argv, std::string help = {} );
         ~arguments();
 
         std::string config_name() const;

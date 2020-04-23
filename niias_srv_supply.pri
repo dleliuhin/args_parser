@@ -21,6 +21,7 @@ isEmpty(qi_niias_srv_supply) {
     include( $$VLIBS_DIR/qmake/vgit.pri )
     include( $$VLIBS_DIR/qmake/vsettings.pri )
     include( $$VLIBS_DIR/qmake/vposix.pri )
+    include( $$VLIBS_DIR/qmake/vbyte_buffer.pri )
 
     lessThan(VLIBS_REVCOUNT, 198): error( "VLIBS is too young :(" )
 
