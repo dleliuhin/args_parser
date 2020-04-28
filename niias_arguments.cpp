@@ -8,12 +8,12 @@
 
 #include "vlog.h"
 #include "vapplication.h"
+#include "vcmdline_parser.h"
 #include "vbyte_buffer.h"
 #include "vgit.h"
 #include "impl_vposix/wrap_fcntl.h"
 #include "impl_vposix/wrap_unistd.h"
 #include "impl_vposix/wrap_errno.h"
-#include "impl_vposix/wrap_signal.h"
 #include "impl_vposix/safe_fd.h"
 #include "impl_vposix/wrap_sys_file.h"
 
@@ -119,7 +119,7 @@ public:
         wrap_unistd::write(pid_fd, vcat().aligned(vapplication::pid(),10,' ')('\n'));
     }
     //-----------------------------------------------------------------------------------
-    vapplication::args_parser args;
+    vcmdline_parser args;
 
     std::string conf_fname;
 

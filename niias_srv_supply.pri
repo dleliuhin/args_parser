@@ -19,9 +19,10 @@ isEmpty(qi_niias_srv_supply) {
     isEmpty(VLIBS_DIR): error("niias_srv_supply: Need VLIBS_DIR correct path.")
 
     include( $$VLIBS_DIR/qmake/vgit.pri )
-    include( $$VLIBS_DIR/qmake/vsettings.pri )
     include( $$VLIBS_DIR/qmake/vposix.pri )
+    include( $$VLIBS_DIR/qmake/vsettings.pri )
     include( $$VLIBS_DIR/qmake/vbyte_buffer.pri )
+    include( $$VLIBS_DIR/qmake/vcmdline_parser.pri )
 
     lessThan(VLIBS_REVCOUNT, 198): error( "VLIBS is too young :(" )
 
@@ -30,9 +31,7 @@ isEmpty(qi_niias_srv_supply) {
     HEADERS     += $$PWD/niias_arguments.h
     SOURCES     += $$PWD/niias_arguments.cpp
 
-#    OTHER_FILES += $$VLIBS_DIR/niias_srv_supply/niias_srv_supply.cmake
-#    OTHER_FILES += $$VLIBS_DIR/niias_srv_supply/can.txt
-#    OTHER_FILES += $$VLIBS_DIR/niias_srv_supply/README
+    OTHER_FILES += $$PWD/niias_srv_supply.cmake
 }
 # niias_srv_supply.pri
 #========================================================================================

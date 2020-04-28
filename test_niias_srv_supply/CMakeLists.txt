@@ -1,12 +1,11 @@
 #========================================================================================
 cmake_minimum_required(VERSION 2.8)
 
-project(test_FISH)
+project( test_niias_srv_supply )
 
 set( VLIBS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../vlibs2" )
 
 include( "${VLIBS_DIR}/cmake/gtest.cmake" )
-include( "${VLIBS_DIR}/cmake/vgit.cmake"  )
 
 include ( "../niias_srv_supply.cmake" )
 

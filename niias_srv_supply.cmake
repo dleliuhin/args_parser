@@ -17,9 +17,11 @@ if ( NOT  niias_srv_supply_INCLUDED )
 
     message( "=== include niias_srv_supply... ===" )
 
-    include( "${VLIBS_DIR}/cmake/vlog.cmake" )
-    include( "${VLIBS_DIR}/cmake/vsettings.cmake" )
+    include( "${VLIBS_DIR}/cmake/vgit.cmake" )
     include( "${VLIBS_DIR}/cmake/vposix.cmake" )
+    include( "${VLIBS_DIR}/cmake/vsettings.cmake" )
+    include( "${VLIBS_DIR}/cmake/vbyte_buffer.cmake" )
+    include( "${VLIBS_DIR}/cmake/vcmdline_parser.cmake" )
 
     include_directories( "${CMAKE_CURRENT_LIST_DIR}/" )
 
