@@ -2,8 +2,6 @@
 
 #include <iostream>
 #include <cassert>
-//#include <sys/types.h>
-//#include <sys/stat.h>
 #include <fcntl.h>
 
 #include "vlog.h"
@@ -18,6 +16,7 @@
 #include "impl_vposix/wrap_sys_file.h"
 
 
+using std::string;
 using namespace niias;
 using namespace impl_vposix;
 
@@ -119,6 +118,8 @@ public:
         wrap_unistd::write(pid_fd, vcat().aligned(vapplication::pid(),10,' ')('\n'));
     }
     //-----------------------------------------------------------------------------------
+    void autoreplace_setting_value( std::string * source );
+    void autoreplace_recurse( vsettings * settings );
     vcmdline_parser args;
 
     std::string conf_fname;
@@ -153,15 +154,80 @@ arguments::arguments( int argc, const char * const * const argv, std::string hel
 niias::arguments::~arguments()
 {}
 //=======================================================================================
-std::string niias::arguments::config_name() const
+std::string arguments::app_name() const
+{
+    return _p->args.app_name();
+}
+//=======================================================================================
+std::string arguments::app_path() const
+{
+    return _p->args.app_path();
+}
+//=======================================================================================
+std::string arguments::full_app() const
+{
+    return _p->args.full_app();
+}
+//=======================================================================================
+bool arguments::has_config_name() const
+{
+    return !config_name().empty();
+}
+//=======================================================================================
+const std::string& niias::arguments::config_name() const
 {
     return _p->conf_fname;
 }
 //=======================================================================================
+static void replace_all_entries( string * data,
+                                 const string& from_what,
+                                 const string& to_what )
+{
+    while (1)
+    {
+        auto pos = data->find( from_what );
+
+        if ( pos == string::npos )
+            return;
+
+        data->replace( pos, from_what.size(), to_what );
+    }
+}
+//---------------------------------------------------------------------------------------
+void arguments::_pimpl::autoreplace_setting_value( std::string * source )
+{
+    replace_all_entries( source, "$$APP_NAME", args.app_name() );
+    replace_all_entries( source, "$$APP_PATH", args.app_path() );
+    replace_all_entries( source, "$$FULL_APP", args.full_app() );
+}
+//---------------------------------------------------------------------------------------
+void arguments::_pimpl::autoreplace_recurse( vsettings * settings )
+{
+    auto keys = settings->keys();
+    for ( auto && key: keys )
+    {
+        auto value = settings->get( key );
+        autoreplace_setting_value( &value );
+        settings->set( key, value );
+    }
+
+    auto subgroups = settings->subgroups();
+    for ( auto && subgroup: subgroups )
+    {
+        autoreplace_recurse( &settings->subgroup(subgroup) );
+    }
+}
+//---------------------------------------------------------------------------------------
 vsettings niias::arguments::settings() const
 {
+    if ( !has_config_name() )
+        throw verror << "Config name has not catched from arguments.";
+
     vsettings res;
     res.from_ini_file( _p->conf_fname );
+
+    _p->autoreplace_recurse( &res );
+
     return res;
 }
 //=======================================================================================

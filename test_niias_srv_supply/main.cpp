@@ -13,6 +13,9 @@
 #include "gtest/gtest.h"
 
 #include "niias_arguments.h"
+#include "vcat.h"
+
+#include <fstream>
 
 using namespace std;
 
@@ -24,10 +27,36 @@ class niias_srv_supply: public testing::Test
 #pragma GCC diagnostic pop
 
 //=======================================================================================
-TEST_F( niias_srv_supply, _test_name )
+
+void test_autoreplace() {}
+TEST_F( niias_srv_supply, test_autoreplace )
 {
-    // type here
+    {
+        string sett_text = "same = $$APP_PATH/$$APP_NAME = $$FULL_APP\n";
+        ofstream s;
+        s.open("test.ini");
+        assert( s.good() );
+        s << sett_text;
+    }
+
+    std::vector<const char*> vargs;
+    vargs.push_back("/my/app/name");
+    vargs.push_back("-ctest.ini");
+
+    niias::arguments args( vargs.size(), vargs.data() );
+
+    EXPECT_EQ( args.config_name(), "test.ini" );
+
+    EXPECT_EQ( args.app_name(), "name" );
+    EXPECT_EQ( args.app_path(), "/my/app" );
+    EXPECT_EQ( args.full_app(), "/my/app/name" );
+
+    auto sett = args.settings();
+    EXPECT_EQ( sett.get("same"), "/my/app/name = /my/app/name" );
 }
+
+//=======================================================================================
+
 //
 //  EXPECT_TRUE
 //
@@ -41,24 +70,31 @@ TEST_F( niias_srv_supply, _test_name )
 //
 //=======================================================================================
 
+void test_pid_lock()
+{
+    //  Если запускать несколько программ без задержки, то можно получить блокировку.
+    //  Как тест это не реализовано, чтобы не жрало время.
+    //    "app -p lock -plock2";
+        std::vector<const char*> vargs;
+        vargs.push_back("/my/app/name");
+        //vargs.push_back("-plock.test");
+        vargs.push_back("-p");
+        vargs.push_back("z_lock.pid");
+        //vargs.push_back("-h");
+        //vargs.push_back("ololo");
+
+        niias::arguments args( vargs.size(), vargs.data() );
+        usleep(5e6);
+}
+
+//=======================================================================================
 
 //=======================================================================================
 //  Main, do not delete...
 //=======================================================================================
 int main(int argc, char *argv[])
 {
-//    "app -p lock -plock2";
-    std::vector<const char*> vargs;
-    vargs.push_back("/my/app/name");
-    //vargs.push_back("-plock.test");
-    vargs.push_back("-p");
-    vargs.push_back("z_lock.pid");
-    //vargs.push_back("-h");
-    //vargs.push_back("ololo");
-
-    niias::arguments args( vargs.size(), vargs.data() );
-    usleep(5e6);
-    return 0;
+    test_autoreplace();
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
