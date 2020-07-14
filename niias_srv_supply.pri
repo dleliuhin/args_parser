@@ -32,7 +32,7 @@ isEmpty(qi_niias_srv_supply) {
     SOURCES     += $$PWD/niias_arguments.cpp
 
     OTHER_FILES += $$PWD/niias_srv_supply.cmake
-    OTHER_FILES += $$PWD/README
+    OTHER_FILES += $$PWD/README.md
 }
 # niias_srv_supply.pri
 #========================================================================================

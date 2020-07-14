@@ -26,33 +26,34 @@ class arguments::_pimpl
 public:
     using str = std::string;
     //-----------------------------------------------------------------------------------
-    static void print_phony_help()
+    void print_help()
     {
-        std::cout << "\n======== NIIAS service =======================================\n"
-                  << " -h, --help                           -- print this help;\n"
-                  << " -v, --vgit-*                         -- print git fixes;\n"
-                  << " -c, config=, --config=               -- set config filename;\n"
-                  << " -p, pid=,    --pid=                  -- set pid filename;\n"
+        std::cout << "\n"
+                  << "======== NIIAS service =======================================\n"
+                  << app_description << '\n'
+                  << "======== Params ==============================================\n"
+                  << " --help, -h                       -- print this help;\n"
+                  << " --vgit-*                         -- print git fixes;\n"
+                  << " --config=<name>, -c              -- set config filename;\n"
+                  << " --pid=<name>, -p                 -- set pid filename;\n"
+                  << " --print-conf                     -- default config to stdout;\n"
                   << "=============================================================="
                   << std::endl;
     }
     //-----------------------------------------------------------------------------------
-    void print_help()
-    {
-        if ( help.empty() )
-            print_phony_help();
-        else
-            std::cout << help;
-    }
-    //-----------------------------------------------------------------------------------
     _pimpl( int argc, const char * const * const argv )
-        : args(argc,argv)
+        : args( argc, argv )
     {}
     //-----------------------------------------------------------------------------------
     ~_pimpl()
     {
         if ( !pid_fname.empty() )
             wrap_unistd::unlink_no_err( pid_fname );
+    }
+    //-----------------------------------------------------------------------------------
+    bool find_print_conf()
+    {
+        return args.take( "--print-conf" );
     }
     //-----------------------------------------------------------------------------------
     bool find_help()
@@ -65,17 +66,17 @@ public:
     //-----------------------------------------------------------------------------------
     bool find_config()
     {
-        conf_fname = find_smth( "-c", "-c", "config=", "--config=" );
+        conf_fname = find_smth( "-c", "-c", "--config=" );
         return !conf_fname.empty();
     }
     //-----------------------------------------------------------------------------------
     bool find_pid()
     {
-        pid_fname = find_smth( "-p", "-p", "pid=", "--pid=" );
+        pid_fname = find_smth( "-p", "-p", "--pid=" );
         return !pid_fname.empty();
     }
     //-----------------------------------------------------------------------------------
-    str find_smth( str next1, str start1, str start2, str start3 )
+    str find_smth( str next1, str start1, str start2 )
     {
         auto res = args.safe_next( next1, {} );
         if ( !res.empty() ) return res;
@@ -84,9 +85,6 @@ public:
         if ( !res.empty() ) return res;
 
         res = args.safe_starts_with( start2, {} );
-        if ( !res.empty() ) return res;
-
-        res = args.safe_starts_with( start3, {} );
         return res;
     }
     //-----------------------------------------------------------------------------------
@@ -126,16 +124,28 @@ public:
 
     std::string pid_fname;
     safe_fd pid_fd;
-    std::string help;
+
+    std::string app_description;
+    vsettings   default_settings;
     //-----------------------------------------------------------------------------------
-};
+};  // class _pimpl
 //=======================================================================================
-arguments::arguments( int argc, const char * const * const argv, std::string help )
+// Private implementation block.
+//=======================================================================================
+
+
+//=======================================================================================
+//  Face implementation
+//=======================================================================================
+arguments::arguments( int argc, const char * const * const argv,
+                      const std::string& app_description,
+                      const vsettings&   default_settings )
     : _p( new _pimpl(argc,argv) )
 {
     vgit::print_and_exit_if_need( argc, argv );
 
-    _p->help = help;
+    _p->app_description  = app_description;
+    _p->default_settings = default_settings;
 
     if ( _p->find_help() )
     {
@@ -143,12 +153,30 @@ arguments::arguments( int argc, const char * const * const argv, std::string hel
         exit(EXIT_SUCCESS);
     }
 
+    if ( _p->find_print_conf() )
+    {
+        std::cout << _p->default_settings.to_ini();
+        exit(EXIT_SUCCESS);
+    }
+
     if ( _p->find_pid() )
         _p->lock_pid();
 
-    _p->find_config();
+    auto conf_found = _p->find_config();
+    (void)conf_found; // May be not used.
 
     _p->check_remained_args();
+
+    #ifndef V_DEVELOP
+        if ( !conf_found )
+        {
+            _p->print_help();
+            vwarning << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+            vwarning << "config name not setted, but macros V_DEVELOP not defined.";
+            vwarning << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+            exit(EXIT_FAILURE);
+        }
+    #endif
 }
 //=======================================================================================
 niias::arguments::~arguments()
@@ -167,16 +195,6 @@ std::string arguments::app_path() const
 std::string arguments::full_app() const
 {
     return _p->args.full_app();
-}
-//=======================================================================================
-bool arguments::has_config_name() const
-{
-    return !config_name().empty();
-}
-//=======================================================================================
-const std::string& niias::arguments::config_name() const
-{
-    return _p->conf_fname;
 }
 //=======================================================================================
 static void replace_all_entries( string * data,
@@ -220,8 +238,13 @@ void arguments::_pimpl::autoreplace_recurse( vsettings * settings )
 //---------------------------------------------------------------------------------------
 vsettings niias::arguments::settings() const
 {
-    if ( !has_config_name() )
-        throw verror << "Config name has not catched from arguments.";
+    #ifdef V_DEVELOP
+        if ( _p->conf_fname.empty() )
+        {
+            _p->autoreplace_recurse( &_p->default_settings );
+            return _p->default_settings;
+        }
+    #endif
 
     vsettings res;
     res.from_ini_file( _p->conf_fname );

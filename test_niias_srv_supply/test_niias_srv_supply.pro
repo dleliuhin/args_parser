@@ -14,3 +14,4 @@ include( $$PWD/../niias_srv_supply.pri )
 
 SOURCES += main.cpp
 
+DEFINES += V_DEVELOP

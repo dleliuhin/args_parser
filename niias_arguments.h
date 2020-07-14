@@ -1,7 +1,6 @@
 #ifndef NIIAS_ARGUMENTS_H
 #define NIIAS_ARGUMENTS_H
 
-#include <functional>
 #include <memory>
 #include "vsettings.h"
 
@@ -13,15 +12,15 @@ namespace niias
     {
     public:
 
-        arguments( int argc, char const * const * const argv, std::string help = {} );
+        arguments( int argc, char const * const * const argv,
+                   const std::string& app_description,
+                   const vsettings&   default_settings );
+
         ~arguments();
 
         std::string app_name() const;
         std::string app_path() const;
         std::string full_app() const;
-
-        bool           has_config_name() const;
-        const std::string& config_name() const;
 
         vsettings settings() const;
 
