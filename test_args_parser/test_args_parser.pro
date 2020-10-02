@@ -10,7 +10,7 @@ include( $$VLIBS_DIR/qmake/gtest.pri )
 include( $$VLIBS_DIR/qmake/vlog.pri )
 
 MAIN_DIR = $$PWD
-include( $$PWD/../niias_srv_supply.pri )
+include( $$PWD/../args_parser.pri )
 
 SOURCES += main.cpp
 

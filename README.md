@@ -1,79 +1,59 @@
-UPD Редакция от 13-07-2020, by elapidae.
-
-> Данный репозиторий содержит реализацию требований к общему коду, описанных
-[здесь](http://confluence.niias/pages/viewpage.action?pageId=24349153).
-
->   Основной целью реализации данного модуля является облегчение жизни разрабочика при
-написании микросервиса с учетом требований к коду, а также унификации кода для быстрого
-ввода приложения в эксплуатацию.
+>   The main purpose of the implementation of this module is to make the life of a developer easier when writing a microservice taking into account the requirements for the code, as well as unifying the code for fast putting the application into operation.
 
 
 # Abstract
-Так как к параметрам программы применяется двойной уровень вложенности, т.е. из
-аргументов командной строки берется имя файла конфигурации, принято решение, что никаких
-других аргументов, кроме описанных ниже, в командной строке не ожидается.
-Настраивайте сколько душе угодно через конфигурацию. Класс берет на себя обязанность
-проверить, что одмины не вбили в аргументы какой-нибудь отсебятины.
+Since a double nesting level is applied to the program parameters, i.e. the name of the configuration file is taken from the command line arguments, it is decided that no other arguments other than those described below are expected on the command line. Customize as much as you like through the configuration. The class takes it upon itself to check that users have not hammered any gag into the arguments.
 
-## Флаги
+## Flags
 
-* -h, --help -- выводит стандартную помощь, с описанием, переданным в конструктор;
-* --vgit, --vgit-hash, --vgit-author, --vgit-revcount, --vgit-email, etc -- выводит
-информацию о коммите сборки;
-* --print-conf -- выводит конфирурацию (по умолчанию), переданную в конструктор;
-* -c filename, -cfilename, --config=filename -- принимает имя файла конфигурации;
-* -p filename, -pfilename, --pid=filename -- принимает имя файла для advisory блокировки
-и сохранении pid процесса;
+* -h, --help -- displays standard help, with a description passed to the constructor;
+* --vgit, --vgit-hash, --vgit-author, --vgit-revcount, --vgit-email, etc -- deduces
+build commit information;
+* --print-conf -- outputs the config (default) passed to the constructor;
+* -c filename, -cfilename, --config=filename -- takes the name of the configuration file;
+* -p filename, -pfilename, --pid=filename -- takes filename for advisory blocking
+and saving the pid of the process;
 
-Любые другие флаги воспринимаются как ошибочные. Они будут распечатаны и программа
-завершится.
+Any other flags are considered invalid. They will be printed and the program will end.
 
 ### --help
-Без комментариев.
+No comment.
 
 ### --vgit*
-Работает по принципу, описанному в соответствующем модуле из vlibs2. Если есть такой
-флаг, то будет выведена соответствующая информация и программа завершится.
+Works according to the principle described in the corresponding module from VLib. If there is such flag, the corresponding information will be displayed and the program will end.
 
 ### --print-conf
-Печатает что получится из переданного в конструктор vsettings. Подразумевается, что
-программист передает настройки по умолчанию.
+Prints what will come out of the vsettings passed to the constructor. It is assumed that the programmer passes the default settings.
 
 ### --config=filename
-Принимает имя файла конфигурации.
+Takes in the name of the configuration file.
 
-NB! См. внимательно пункт про макрос V_DEVELOP!!!
-В случае отсутствия макроса V_DEVELOP является обязательным аргументом!
+NB! Look carefully at the point about the V_DEVELOP macro !!!
+If there is no macro, V_DEVELOP is a required argument!
 
-Сразу же на него натравливается класс vsettings и заменяет все вхождения `$$APP_NAME,
-$$APP_PATH, $$FULL_APP` на соответствующие подстановки.
-Это крайне полезно для гибкой настройки, например, путей логирования и пр. девупсных
-штучек. Рекомендую.
+The vsettings class is immediately set on it and replaces all occurrences `$$APP_NAME,
+$$APP_PATH, $$FULL_APP` to the corresponding substitutions.
 
- - автозамены действуют на все значения всех подгрупп в vsettings.
+ - autocorrect affects all values of all subgroups in vsettings.
 
- - автозамены проходят в произвольном порядке:
-        - $$V_APP_PATH -- заменяется на путь к приложению;
-        - $$V_APP_NAME -- заменяется на имя приложения;
-        - $$V_FULL_APP -- заменяется на путь/имя;
+ - autocorrect runs in random order:
+        - $$V_APP_PATH -- replaced with the path to the application;
+        - $$V_APP_NAME -- replaced with the name of the application;
+        - $$V_FULL_APP -- replaced with path / name;
 
-NB! Действуют правила замены только если чтение vsettings поручается arguments.
-Магии нету, если вы решили, что модуль будет читать ваши мысли и делать автозамену в обе
-стороны в самых неожиданных местах, то нет. Автозамена происходит если используется
-метод `niias::arguments::settings()`.
+NB! Replacement rules only apply if reading vsettings is assigned to arguments.
+There is no magic if you decide that the module will read your mind and do autocorrect in both parties in the most unexpected places, then no. Autocorrect occurs if used method `niias :: arguments :: settings ()`.
 
 
 ### --pid=filename
-Принимает имя файла для сохранения pid процесса.
-Делает, так называемую, advisory блокировку. Если два процесса одновременно будут
-захватывать один и тот же файл, то второй процесс ее не получит. Соответственно,
-выведет имя процесса обидчика и завершится.
+Takes a filename to store the pid of the process.
+It makes the so-called advisory blocking. If two processes are simultaneously capture the same file, the second process will not receive it. Respectively, will print the name of the offending process and exit.
 
-Необязательный аргумент.
+Optional argument.
 
 
 ##API
-API класса максимально облегчено. Все что только возможно убрано под капот.
+The class API is as lightweight as possible. Everything that is possible is tucked away under the hood.
 
 ```
 class niias::arguments
@@ -92,36 +72,35 @@ class niias::arguments
 }
 ```
 
-В конструктор передаем аргументы из `main(argc,argv)`, в качестве описания
-`app_description` ожидается брифинг сервиса. NB! Не нужно в брифинг лепить аргументы,
-оно само! Вам нужно просто дать краткое описание сервиса.
+Pass the arguments from `main (argc, argv)` to the constructor, as a description
+`app_description` is awaiting a service briefing. NB! No need to sculpt arguments into the briefing,
+it itself! You just need to give a short description of the service.
 
-В `default_settings` передаем настройки. Крайне рекомендую использовать для сборки
-`vsettings::schema`. Далее будет пример - рыбка.
+Pass the settings to `default_settings`. I highly recommend using for assembly
+`vsettings :: schema`. The following will be an example - a fish.
 
-Методы:
+Methods:
 ```
-    app_name(); //  имя запущенного бинарника.
-    app_path(); //  путь к нему.
-    full_app(); //  путь с именем.
+    app_name(); //  the name of the running binary.
+    app_path(); //  the path to it.
+    full_app(); //  path with name.
 
-    //  Возвращают настройки, прочитанные из файла, указанного в аргументе "-c".
-    //  Далее, см. про флаг разработки!!!
+     // Return the settings read from the file specified in the "-c" argument.
+     // Further, see about the development flag !!!
     settings(); 
 ```
 
 
-##Флаг разработки `V_DEVELOP`
+## Development flag ```V_DEVELOP```
 
-В системах сборки нет унифицированного способа выяснить как собирается проект. Поэтому,
-я взял на себя смелость использовать макрос `V_DEVELOP`. Если этот макрос установлен,
-то считается, что сейчас разработчик работает над кодом и ему не удобно использовать
-какие-либо флаги. Поэтому, если нет указания на файл конфигурации, `settings()` вернет
-настройки по умолчанию. Если же макрос не определен и в аргументах нету "-c", то
-бросится ошибка.
+Build systems don't have a consistent way to figure out how a project is built. Therefore,
+I took the liberty of using the `V_DEVELOP` macro. If this macro is set,
+then it is believed that the developer is currently working on the code and it is not convenient for him to use
+any flags. Therefore, if there is no reference to the configuration file, `settings ()` will return
+default settings. If the macro is not defined and there is no "-c" in the arguments, then
+an error will be thrown.
 
-
-##Пример
+## Example
 
 ```
 //=======================================================================================

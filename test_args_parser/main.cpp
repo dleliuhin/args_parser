@@ -12,7 +12,7 @@
 
 #include "gtest/gtest.h"
 
-#include "niias_arguments.h"
+#include "arguments.h"
 #include "vcat.h"
 #include "vlog.h"
 #include "vprocess.h"
@@ -23,14 +23,14 @@ using namespace std;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wweak-vtables"
-class niias_srv_supply: public testing::Test
+class args_parser: public testing::Test
 {};
 #pragma GCC diagnostic pop
 
 //=======================================================================================
 
 void test_autoreplace() {}
-TEST_F( niias_srv_supply, test_autoreplace )
+TEST_F( args_parser, test_autoreplace )
 {
     //  Prepare ini file with key 'same' and autoreplace macroses.
     {
@@ -46,7 +46,7 @@ TEST_F( niias_srv_supply, test_autoreplace )
     vargs.push_back("/my/app/name");
     vargs.push_back("-ctest.ini");      // Use notation without space.
 
-    niias::arguments args( vargs.size(), vargs.data(), "Test autoreplace", {} );
+    service::arguments args( vargs.size(), vargs.data(), "Test autoreplace", {} );
 
     EXPECT_EQ( args.app_name(), "name" );
     EXPECT_EQ( args.app_path(), "/my/app" );
@@ -71,7 +71,7 @@ void test_pid_lock()
         //vargs.push_back("-h");
         //vargs.push_back("ololo");
 
-        niias::arguments args( vargs.size(), vargs.data(), "", {} );
+        service::arguments args( vargs.size(), vargs.data(), "", {} );
         usleep(5e6);
 }
 
@@ -84,7 +84,7 @@ void test_print_conf()
     vargs.push_back("--print-conf");
 
     // will exit after print empty config.
-    niias::arguments args( vargs.size(), vargs.data(), "Description of service", {} );
+    service::arguments args( vargs.size(), vargs.data(), "Description of service", {} );
 }
 
 //=======================================================================================
@@ -170,7 +170,7 @@ private:
 //=======================================================================================
 int main(int argc, char *argv[])
 {
-    niias::arguments args( argc, argv, "Example", Settings::by_default() );
+    service::arguments args( argc, argv, "Example", Settings::by_default() );
     Settings settings;
     settings.capture( args.settings() );
     settings.logs.setup();

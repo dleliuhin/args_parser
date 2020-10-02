@@ -1,4 +1,4 @@
-#include "niias_arguments.h"
+#include "arguments.h"
 
 #include <iostream>
 #include <cassert>
@@ -17,7 +17,7 @@
 
 
 using std::string;
-using namespace niias;
+using namespace service;
 using namespace impl_vposix;
 
 //=======================================================================================
@@ -29,7 +29,7 @@ public:
     void print_help()
     {
         std::cout << "\n"
-                  << "======== NIIAS service =======================================\n"
+                  << "======== service =============================================\n"
                   << app_description << '\n'
                   << "======== Params ==============================================\n"
                   << " --help, -h                       -- print this help;\n"
@@ -179,7 +179,7 @@ arguments::arguments( int argc, const char * const * const argv,
     #endif
 }
 //=======================================================================================
-niias::arguments::~arguments()
+service::arguments::~arguments()
 {}
 //=======================================================================================
 std::string arguments::app_name() const
@@ -236,7 +236,7 @@ void arguments::_pimpl::autoreplace_recurse( vsettings * settings )
     }
 }
 //---------------------------------------------------------------------------------------
-vsettings niias::arguments::settings() const
+vsettings service::arguments::settings() const
 {
     #ifdef V_DEVELOP
         if ( _p->conf_fname.empty() )
